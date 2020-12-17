@@ -40,7 +40,7 @@ function getProductList(html) {
   return new Promise((resolve, reject) => {
     try {
       const $ = cheerio.load(html);
-      const $nodes = $('#searchList').children();
+      const $nodes = $('#goodsRankList').children();
       let result = [];
       $nodes.each(function (i, elem) {
         const priceOrigin = $(this).find('p.price').text().trim();
@@ -74,8 +74,8 @@ function getHtml(params) {
   // range=1d 일간 랭킹
   return new Promise(async (resolve, reject) => {
     try {
-      const { displayCnt, page } = params;
-      const url = `https://search.musinsa.com/ranking/best?range=1d&display_cnt=${displayCnt}&page=${page}`;
+      const { page } = params;
+      const url = `https://search.musinsa.com/ranking/best?period=day&page=${page}`;
       const res = await axios.get(url);
       resolve(res.data);
     } catch (e) {
@@ -85,8 +85,9 @@ function getHtml(params) {
 }
 
 function getOnlyPrice(price_) {
-  if (!price_.includes('\t')) return price_.replace('원', '').replace(',', '');
-  const price = price_.split('\t').slice(-1)[0];
+  const blankRegex = /\s/g;
+  if (!blankRegex.exec(price_)) return price_.replace('원', '').replace(',', '');
+  const price = price_.split('\n').slice(-1)[0].trim();
   return price.replace('원', '').replace(',', '');
 }
 

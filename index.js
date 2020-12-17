@@ -22,60 +22,69 @@ exports.dailyCrawling = functions.pubsub
     const dateString = getTodayDateString();
     const param = {
       pageStart: 1,
-      pageLast: 10,
+      pageLast: 11,
       delay: 0,
       displayCnt: 100,
       dateString,
     };
     const products = await start(param);
-    let updates = await getUpdates(products, dateString);
+    console.log('Crawling success with ', products.length, ' products');
+    let updates = {};
     updates[`ranking/${dateString}`] = products;
     await database.ref().update(updates);
-    console.log('update success');
+    console.log('Update DB success');
   });
 
-exports.crawling = functions.https.onRequest(async (request, response) => {
-  const dateString = getTodayDateString();
-  const param = {
-    pageStart: 1,
-    pageLast: 10,
-    delay: 0,
-    displayCnt: 100,
-    dateString,
-  };
-  const products = await start(param);
-  let updates = await getUpdates(products, dateString);
-  updates[`ranking/${dateString}`] = products;
-  await database.ref().update(updates);
-  response.send(`Success crawling ${products.length} products on ${dateString}`);
-});
+exports.updateProductsOnCreate = functions.database
+  .ref(`/ranking/{dateString}`)
+  .onCreate((snapshot, context) => {
+    const dateString = getTodayDateString();
+    const ranking = snapshot.val();
+    ranking.forEach(async p => {
+      const { rank, brand, name, price, img, serialNo } = p;
+      const ref = database.ref(`products/${serialNo}`);
+      const snapshot = await ref.once('value');
+      const product = snapshot.val();
 
-function getUpdates(products, dateString) {
-  return new Promise((resolve, reject) => {
-    try {
-      let updates = {};
-      products.forEach(async p => {
-        const { rank, brand, name, price, img, serialNo } = p;
-        const snapshot = await database.ref(`products/${serialNo}`).once('value');
-        const product = snapshot.val();
-
-        if (product) {
-          // Add price data
-          updates[`products/${serialNo}/calendar/${dateString}`] = { rank, price };
-        } else {
-          // Insert product
-          await database.ref(`products/${serialNo}`).set({
-            brand,
-            name,
-            img,
-            calendar: { [dateString]: { rank, price } },
-          });
-        }
-      });
-      resolve(updates);
-    } catch (e) {
-      console.log(e);
-      reject(e);
-    }
+      if (product) {
+        await database.ref(`products/${serialNo}/calendar/${dateString}`).update({ rank, price });
+      } else {
+        await database.ref(`products/${serialNo}`).set({
+          brand,
+          name,
+          img,
+          calendar: { [dateString]: { rank, price } },
+        });
+      }
+    });
   });
-}
+
+// function getUpdates(products, dateString) {
+//   return new Promise((resolve, reject) => {
+//     try {
+//       let updates = {};
+//       products.forEach(async p => {
+//         const { rank, brand, name, price, img, serialNo } = p;
+//         const snapshot = await database.ref(`products/${serialNo}`).once('value');
+//         const product = snapshot.val();
+
+//         if (product) {
+//           // Add price data
+//           updates[`products/${serialNo}/calendar/${dateString}`] = { rank, price };
+//         } else {
+//           // Insert product
+//           await database.ref(`products/${serialNo}`).set({
+//             brand,
+//             name,
+//             img,
+//             calendar: { [dateString]: { rank, price } },
+//           });
+//         }
+//       });
+//       resolve(updates);
+//     } catch (e) {
+//       console.log(e);
+//       reject(e);
+//     }
+//   });
+// }
