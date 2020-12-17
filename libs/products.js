@@ -60,10 +60,7 @@ function getProductList(html) {
         const brand = $(this).find('p.item_title a').text();
         const name = $(this).find('p.list_info a').attr('title');
         const price = getOnlyPrice(priceOrigin);
-        // const img = imgOrigin.slice(5, 8).join("/");
-        // .split("/")[5];
-        // "/app/product/detail/{serialNo}/0"
-        const serialNo = $(this).find('div.list_img a').attr('href').split('/')[4];
+        const serialNo = $(this).attr('data-goods-no');
         result.push({ rank, brand, name, price, img, serialNo });
       });
       resolve(result);
@@ -78,7 +75,7 @@ function getHtml(params) {
   return new Promise(async (resolve, reject) => {
     try {
       const { displayCnt, page } = params;
-      const url = `https://store.musinsa.com/app/contents/bestranking?range=1d&display_cnt=${displayCnt}&page=${page}`;
+      const url = `https://search.musinsa.com/ranking/best?range=1d&display_cnt=${displayCnt}&page=${page}`;
       const res = await axios.get(url);
       resolve(res.data);
     } catch (e) {
