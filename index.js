@@ -41,7 +41,7 @@ exports.updateProductsOnCreate = functions.database
     const dateString = getTodayDateString();
     const ranking = snapshot.val();
     ranking.forEach(async p => {
-      const { rank, brand, name, price, img, serialNo } = p;
+      const { rank, brand, brandEN, name, price, img, serialNo } = p;
       const ref = database.ref(`products/${serialNo}`);
       const snapshot = await ref.once('value');
       const product = snapshot.val();
@@ -51,9 +51,29 @@ exports.updateProductsOnCreate = functions.database
       } else {
         await database.ref(`products/${serialNo}`).set({
           brand,
+          brandEN,
           name,
           img,
           calendar: { [dateString]: { rank, price } },
+        });
+      }
+    });
+  });
+
+exports.updateBrandsOnCreate = functions.database
+  .ref(`/ranking/{dateString}`)
+  .onCreate((snapshot, context) => {
+    const ranking = snapshot.val();
+    ranking.forEach(async p => {
+      const { brand, brandEN } = p;
+      const ref = database.ref(`brands/${brandEN}`);
+      const snapshot = await ref.once('value');
+      const item = snapshot.val();
+      if (!item) {
+        await database.ref(`brands/${brandEN}`).set({
+          brand,
+          brandEN,
+          search: 0,
         });
       }
     });

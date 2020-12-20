@@ -58,10 +58,11 @@ function getProductList(html) {
 
         const rank = rankOrigin.substring(0, rankLength - 1); //Remove String "위"
         const brand = $(this).find('p.item_title a').text();
+        const brandEN = $(this).find('p.item_title a').attr('href').split('/').slice(-1)[0];
         const name = $(this).find('p.list_info a').attr('title');
         const price = getOnlyPrice(priceOrigin);
         const serialNo = $(this).attr('data-goods-no');
-        result.push({ rank, brand, name, price, img, serialNo });
+        result.push({ rank, brand, brandEN, name, price, img, serialNo });
       });
       resolve(result);
     } catch (e) {
